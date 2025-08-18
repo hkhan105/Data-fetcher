@@ -1,22 +1,32 @@
 // fetch-data.js - Node.js 18+ version
 
-const API_KEY = "CG-oBqnBxu62dV1UAonL7JtsKhV";
 
-// Node.js 18+ has fetch built-in; if older, install node-fetch
-// npm install node-fetch
-// import fetch from 'node-fetch';
 
 async function fetchCoinData(coins = ["bitcoin", "ethereum", "solana"]) {
   try {
+    if (typeof fetch !== "function") {
+      throw new Error(
+        "global fetch is not available. Use Node.js 18+ (run `node -v`) or run this with an environment that provides fetch."
+      );
+    }
+
     const ids = coins.join(",");
     const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_market_cap=true&include_24hr_vol=true`;
 
+    console.log("Request URL:", url);
+
     const response = await fetch(url);
+
+    console.log("Response status:", response.status, response.statusText);
+
     if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`);
+      // capture response body for debugging (text because it might not be JSON)
+      const bodyText = await response.text();
+      throw new Error(`API error: ${response.status} ${response.statusText} - ${bodyText}`);
     }
 
     const data = await response.json();
+    console.log("Raw response JSON:", JSON.stringify(data, null, 2));
 
     for (const coin of coins) {
       if (data[coin]) {
@@ -30,7 +40,8 @@ async function fetchCoinData(coins = ["bitcoin", "ethereum", "solana"]) {
       }
     }
   } catch (err) {
-    console.error("Error fetching data:", err.message);
+    // print full error for debugging
+    console.error("Error fetching data:", err);
   }
 }
 
